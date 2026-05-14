@@ -375,6 +375,19 @@ button { font: inherit; color: inherit; cursor: pointer; }
   50%       { opacity: .45; }
 }
 .status-pulse { animation: statusPulse 1.3s ease-in-out infinite; }
+
+/* Auskultatorische Lücke – Hinweisbox */
+.gap-hint {
+  margin-top: 10px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: var(--warn-soft);
+  border: 1px solid #fbbf24;
+  font-size: 12.5px;
+  color: var(--body);
+  line-height: 1.5;
+}
+.gap-hint strong { color: var(--ink); }
 </style>
 </head>
 <body>
@@ -395,7 +408,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <!-- Info -->
   <div class="learn-card" id="learn-card">
     <button class="learn-card-close" id="learn-close" aria-label="Hinweis schließen">✕</button>
-    Drücke <strong>„Start"</strong> – die Manschette pumpt auf und lässt langsam ab. <strong>Höre auf die Töne:</strong> Beim ersten Ton → systolischer Wert, beim letzten Ton → diastolischer Wert. Danach gibst du beide Werte ein. <strong>Ton einschalten!</strong>
+    Drücke <strong>„Start"</strong> – Manschette pumpt auf, dann langsam ab. Höre auf die Korotkoff-Töne: <strong>Erster Ton = systolisch · Letzter Ton = diastolisch.</strong> Werte von der Skala ablesen und eingeben. <em>Lautstärke am Gerät aufdrehen!</em>
   </div>
 
 
@@ -461,13 +474,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
         <span style="font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--teal);">Systolisch</span>
         <input id="inp-sys" type="number" inputmode="numeric" pattern="[0-9]*" min="50" max="300" placeholder="—"
           style="width:100%; border:none; background:transparent; font-size:26px; font-weight:800; color:var(--ink); text-align:center; outline:none; font-variant-numeric:tabular-nums; font-family:inherit; margin:4px 0; -moz-appearance:textfield; -webkit-appearance:none;">
-        <span style="font-size:10px; opacity:.6;">Erster Ton (mmHg)</span>
+        <span style="font-size:10px; opacity:.6;">mmHg</span>
       </div>
       <div class="measure-btn" style="cursor:default;">
         <span style="font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--teal);">Diastolisch</span>
         <input id="inp-dia" type="number" inputmode="numeric" pattern="[0-9]*" min="30" max="200" placeholder="—"
           style="width:100%; border:none; background:transparent; font-size:26px; font-weight:800; color:var(--ink); text-align:center; outline:none; font-variant-numeric:tabular-nums; font-family:inherit; margin:4px 0; -moz-appearance:textfield; -webkit-appearance:none;">
-        <span style="font-size:10px; opacity:.6;">Letzter Ton (mmHg)</span>
+        <span style="font-size:10px; opacity:.6;">mmHg</span>
       </div>
     </div>
     <button class="action-btn secondary" id="btn-auswerten" style="display:none;">✓ Auswerten</button>
@@ -663,32 +676,34 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
   // ---- Audio ----
   let audioCtx = null;
-  let audioUnlocked = false;
 
   function getAudioCtx() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     return audioCtx;
   }
 
-  // Stiller Buffer — entsperrt iOS AudioContext zuverlässig während einer User-Geste
-  async function unlockAudio() {
-    const ctx = getAudioCtx();
-    if (audioUnlocked && ctx.state === 'running') return;
+  // Stiller Buffer während User-Geste – entsperrt iOS zuverlässig
+  function unlockAudio() {
     try {
-      await ctx.resume();
-      const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(ctx.destination);
-      src.start(0);
-      audioUnlocked = true;
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = audioCtx;
+      ctx.resume().then(() => {
+        const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+      }).catch(() => {});
     } catch(e) {}
   }
+
+  // touchstart feuert VOR click → früherer Unlock auf iOS Safari
+  document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
 
   function playKorotkoff(intensity = 1.0) {
     try {
       const ctx = getAudioCtx();
-      if (ctx.state !== 'running') return; // noch nicht entsperrt – Beat überspringen
+      if (ctx.state === 'suspended') ctx.resume();
       // Kurzer dumpfer Ton – wie Korotkoff-Geräusch
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -722,6 +737,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   let phase = 'idle'; // idle | inflating | deflating | done
   let trueSys = 0, trueDia = 0;
   let measuredSys = null, measuredDia = null;
+  // Auskultatorische Lücke
+  let hasGap = false, gapHigh = 0, gapLow = 0;
   let sessionTotal = 0, sessionCorrect = 0;
   let deflateInterval = null;
   let currentPressure = 0;
@@ -771,6 +788,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
     phase = 'inflating';
 
     [trueSys, trueDia] = randomBP();
+
+    // Auskultatorische Lücke: ~35% Chance bei sys ≥ 150
+    hasGap = trueSys >= 150 && Math.random() < 0.35;
+    if (hasGap) {
+      const range = trueSys - trueDia;
+      gapHigh = trueSys - Math.round(range * 0.12); // Lücke beginnt knapp unter systolisch
+      gapLow  = gapHigh  - Math.round(range * 0.3 + 5); // 15–25 mmHg breite Lücke
+    }
+
     // Aufpumpen bis ~30 über systolisch
     const inflateTarget = trueSys + 30;
 
@@ -809,7 +835,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
       heartInterval = setInterval(() => {
         if (phase !== 'deflating') { clearInterval(heartInterval); return; }
         const p = Math.max(0, inflateTarget - dropPerMs * (performance.now() - startTime));
-        const shouldSound = p <= trueSys && p > trueDia;
+        const inGap = hasGap && p < gapHigh && p > gapLow;
+        const shouldSound = p <= trueSys && p > trueDia && !inGap;
         if (shouldSound) {
           const mid = (trueSys + trueDia) / 2;
           const dist = Math.abs(p - mid) / Math.max(1, (trueSys - trueDia) / 2);
@@ -994,6 +1021,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
       ? (allOk ? '1 von 1 richtig' : '0 von 1 richtig')
       : `${sessionCorrect} von ${sessionTotal} richtig`;
 
+    // Auskultatorische Lücke – Hinweis wenn vorhanden
+    const gapHint = hasGap ? `
+      <div class="gap-hint">
+        ⚠ <strong>Auskultatorische Lücke</strong> bei dieser Messung:
+        Töne zwischen <strong>${gapLow}</strong> und <strong>${gapHigh} mmHg</strong> unterbrochen.
+        ${hasSys && measuredSys <= gapHigh && measuredSys >= gapLow - 10
+          ? 'Du hast wahrscheinlich die Lücke als Ende der Töne interpretiert — systolischer Wert dadurch zu niedrig.'
+          : 'Gut gemacht — du hast trotz Lücke den richtigen Wert erkannt!'}
+      </div>` : '';
+
     const html = `<div class="card res-hero ${verdictCls}" style="width:100%;">
         <div class="res-col">
           <span class="res-col-label">Richtig</span>
@@ -1010,7 +1047,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
           <span class="res-col-val ${verdictCls}">${hasSys ? measuredSys : '–'}/${hasDia ? measuredDia : '–'}</span>
           <span style="font-size:10px;color:var(--muted);font-weight:500">mmHg</span>
         </div>
-    </div>`;
+    </div>${gapHint}`;
 
     const wrap = $('result-wrap');
     wrap.innerHTML = html;
