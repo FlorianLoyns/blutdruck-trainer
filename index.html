@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0d7377">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -132,15 +132,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .manometer-wrap svg { width: 100%; height: auto; display: block; }
 
-/* Manschetten-Visualisierung */
-.cuff-bar {
-  display: none; /* entfernt */
-}
-.cuff-bar-fill {
-  display: none;
-  width: 0%;
-}
-
 /* Status-Text */
 .status-label {
   font-size: 13px;
@@ -244,27 +235,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .res-verdict.ok   { color: #2d7a0a; }
 .res-verdict.warn { color: #92400e; }
 .res-verdict.err  { color: #991b1b; }
-
-.rr-row { margin: 0 0 10px; }
-.rr-row:last-child { margin: 0; }
-.rr-row-head {
-  display: flex; justify-content: space-between; align-items: baseline;
-  margin-bottom: 5px; font-size: 13px;
-}
-.rr-row-head strong { font-variant-numeric: tabular-nums; }
-.rr-bar-track {
-  height: 6px; background: var(--border); border-radius: 4px; overflow: hidden;
-}
-.rr-bar-fill {
-  height: 100%; border-radius: 4px; transition: width .6s ease;
-}
-.rr-bar-fill.green { background: var(--ok); }
-.rr-bar-fill.red   { background: var(--err); }
-
-
-.diff-ok   { color: #3b9a22; }
-.diff-warn { color: #d97706; }
-.diff-err  { color: #dc2626; }
 
 /* Schwierigkeits-Chips */
 .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -375,19 +345,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .status-pulse { animation: statusPulse 1.3s ease-in-out infinite; }
 
-/* Auskultatorische Lücke – Hinweisbox */
-.gap-hint {
-  margin-top: 10px;
-  padding: 10px 13px;
-  border-radius: 10px;
-  background: var(--warn-soft);
-  border: 1px solid #fbbf24;
-  font-size: 12.5px;
-  color: var(--body);
-  line-height: 1.5;
-}
-.gap-hint strong { color: var(--ink); }
-
 /* Info-Button (wie BMI-Rechner) */
 .info-btn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -454,7 +411,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
     <!-- Manometer -->
     <div class="manometer-wrap">
-      <svg viewBox="0 18 300 242" xmlns="http://www.w3.org/2000/svg" id="manometer-svg">
+      <svg viewBox="0 18 300 242" xmlns="http://www.w3.org/2000/svg" id="manometer-svg" role="img" aria-label="Manometer – Druckanzeige zum Ablesen">
         <defs>
           <filter id="shadow-gauge">
             <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.12"/>
@@ -486,10 +443,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
         <text x="150" y="170" text-anchor="middle" font-family="Inter,-apple-system,sans-serif"
               font-size="8.5" font-weight="600" fill="var(--muted)" letter-spacing=".06em">mmHg</text>
 
-        <!-- Aktueller Druck (ausgeblendet – Schüler liest von Skala ab) -->
-        <text x="150" y="148" text-anchor="middle" font-family="Inter,-apple-system,sans-serif"
-              font-size="32" font-weight="800" fill="var(--ink)" id="pressure-display" opacity="0">0</text>
-
         <!-- Nadel -->
         <g id="needle-group" transform="rotate(-135 150 140)">
           <line x1="150" y1="162" x2="150" y2="47" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
@@ -503,19 +456,19 @@ button { font: inherit; color: inherit; cursor: pointer; }
     </div>
 
     <!-- Status -->
-    <div class="status-label" id="status-label">Bereit zum Starten</div>
+    <div class="status-label" id="status-label" role="status" aria-live="polite">Bereit zum Starten</div>
 
     <!-- Eingabe nach der Messung -->
     <div class="measure-btns" id="input-wrap" style="display:none">
       <div class="measure-btn" style="cursor:default;">
         <span style="font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--teal);">Systolisch</span>
-        <input id="inp-sys" type="number" inputmode="numeric" pattern="[0-9]*" min="50" max="300" placeholder="—"
+        <input id="inp-sys" type="number" inputmode="numeric" pattern="[0-9]*" min="50" max="300" placeholder="—" aria-label="Systolischer Wert in mmHg"
           style="width:100%; border:none; background:transparent; font-size:26px; font-weight:800; color:var(--ink); text-align:center; outline:none; font-variant-numeric:tabular-nums; font-family:inherit; margin:4px 0; -moz-appearance:textfield; -webkit-appearance:none;">
         <span style="font-size:10px; opacity:.6;">mmHg</span>
       </div>
       <div class="measure-btn" style="cursor:default;">
         <span style="font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--teal);">Diastolisch</span>
-        <input id="inp-dia" type="number" inputmode="numeric" pattern="[0-9]*" min="30" max="200" placeholder="—"
+        <input id="inp-dia" type="number" inputmode="numeric" pattern="[0-9]*" min="30" max="200" placeholder="—" aria-label="Diastolischer Wert in mmHg"
           style="width:100%; border:none; background:transparent; font-size:26px; font-weight:800; color:var(--ink); text-align:center; outline:none; font-variant-numeric:tabular-nums; font-family:inherit; margin:4px 0; -moz-appearance:textfield; -webkit-appearance:none;">
         <span style="font-size:10px; opacity:.6;">mmHg</span>
       </div>
@@ -523,7 +476,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <button class="action-btn secondary" id="btn-auswerten" style="display:none;">✓ Auswerten</button>
 
     <!-- Ergebnis -->
-    <div id="result-wrap" style="width:100%; display:none;"></div>
+    <div id="result-wrap" style="width:100%; display:none;" aria-live="polite"></div>
 
     <!-- Aktions-Button -->
     <button class="action-btn" id="action-btn">▶ Messung starten</button>
@@ -577,7 +530,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncThemeIcon);
 
   // ---- Manometer Skalierung ----
-  const CX = 150, CY = 140, R_OUTER = 100, R_INNER = 80;
+  const CX = 150, CY = 140;
   const START_DEG = -135, END_DEG = 135; // 270° Bogen
   const MAX_PRESSURE = 300;
 
@@ -692,7 +645,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   function setNeedle(p) {
     const angle = pressureToAngle(Math.max(0, Math.min(300, p)));
     $('needle-group').setAttribute('transform', `rotate(${angle} 150 140)`);
-    $('pressure-display').textContent = Math.round(p);
   }
 
   function animateTo(target, durationMs, onDone) {
@@ -766,7 +718,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     } catch(e) {}
   }
 
-  // Toleranz (fest, ±4 mmHg)
+  // Toleranz (fest, ±8 mmHg)
   const TOLERANCE = 8;
 
 
@@ -777,7 +729,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   // Auskultatorische Lücke
   let hasGap = false, gapHigh = 0, gapLow = 0;
   let sessionTotal = 0, sessionCorrect = 0;
-  let deflateInterval = null;
   let currentPressure = 0;
   let heartInterval = null;
 
@@ -884,7 +835,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
       const dropPerMs = inflateTarget / deflateTime;
       const startTime = performance.now();
 
-      clearInterval(deflateInterval);
       clearInterval(heartInterval);
 
       // Anzeige ausblenden – Schüler soll von der Skala ablesen
@@ -949,7 +899,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
           currentPressure = normalPressure;
         }
 
-        const shouldSound = currentPressure <= trueSys && currentPressure > trueDia;
+        const inGap = hasGap && currentPressure < gapHigh && currentPressure > gapLow;
+        const shouldSound = currentPressure <= trueSys && currentPressure > trueDia && !inGap;
         if (shouldSound !== soundActive) {
           soundActive = shouldSound;
           showSoundActive(soundActive);
@@ -1044,19 +995,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
     }
   });
 
-  function diffLabel(d) {
-    if (d === 0) return '✓ Genau getroffen!';
-    if (d > 0)  return '+' + d + ' mmHg';
-    return d + ' mmHg';
-  }
-  function diffClass(d, tol) {
-    d = Math.abs(d);
-    if (d === 0) return 'diff-ok';
-    if (d <= tol) return 'diff-ok';
-    if (d <= tol * 2) return 'diff-warn';
-    return 'diff-err';
-  }
-
   function showResult() {
     const tol = TOLERANCE;
     const hasSys = measuredSys !== null;
@@ -1075,26 +1013,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
     adaptBpWeight(allOk);
 
 
-    // Balken-Breite: wie nah war der Schüler? 100% = perfekt, 0% = doppelte Toleranz überschritten
-    function barPct(d) {
-      if (d === null) return 0;
-      return Math.max(0, Math.round((1 - Math.abs(d) / (tol * 2)) * 100));
-    }
-    function barColor(ok) { return ok ? 'green' : 'red'; }
-    function deltaStr(d) {
-      if (d === null) return 'Nicht erfasst';
-      const sign = d > 0 ? '+' : '';
-      return `${sign}${d} mmHg`;
-    }
-
     const verdictCls  = allOk ? 'ok' : (sysOk || diaOk) ? 'warn' : 'err';
     const verdictText = allOk ? 'Sehr gut!' : (sysOk || diaOk) ? 'Fast!' : 'Daneben';
 
     const scoreText = sessionTotal === 1
       ? (allOk ? '1 von 1 richtig' : '0 von 1 richtig')
       : `${sessionCorrect} von ${sessionTotal} richtig`;
-
-    const gapHint = '';
 
     const html = `<div class="bp-norm-wrap">
       <div class="card res-hero ${verdictCls}" style="width:100%;position:relative;">
@@ -1126,7 +1050,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
           <div class="bp-legend-row"><span class="bp-legend-dot" style="background:#dc2626"></span><span class="bp-legend-name">Hypertonie Grad 3</span><span class="bp-legend-range">≥180 / ≥110</span></div>
         </div>
       </div>
-    </div>${gapHint}`;
+    </div>`;
 
     const wrap = $('result-wrap');
     wrap.innerHTML = html;

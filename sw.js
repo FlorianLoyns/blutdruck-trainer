@@ -1,4 +1,4 @@
-const CACHE = 'bp-trainer-v4';
+const CACHE = 'bp-trainer-v5';
 const ASSETS = [
   './', './index.html', './manifest.json', './icon.svg', './og-image.png',
   './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png',
