@@ -663,18 +663,32 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
   // ---- Audio ----
   let audioCtx = null;
+  let audioUnlocked = false;
+
   function getAudioCtx() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // iOS entsperrt AudioContext erst nach User-Geste
-    if (audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
   }
-  // Audio-Kontext beim ersten Touch vorab entsperren
-  document.addEventListener('touchstart', () => getAudioCtx(), { once: true });
+
+  // Stiller Buffer — entsperrt iOS AudioContext zuverlässig während einer User-Geste
+  async function unlockAudio() {
+    const ctx = getAudioCtx();
+    if (audioUnlocked && ctx.state === 'running') return;
+    try {
+      await ctx.resume();
+      const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+      audioUnlocked = true;
+    } catch(e) {}
+  }
 
   function playKorotkoff(intensity = 1.0) {
     try {
       const ctx = getAudioCtx();
+      if (ctx.state !== 'running') return; // noch nicht entsperrt – Beat überspringen
       // Kurzer dumpfer Ton – wie Korotkoff-Geräusch
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -925,7 +939,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
   // Aktions-Button
   $('action-btn').addEventListener('click', () => {
-    if (phase === 'idle' || phase === 'done') startMeasurement();
+    if (phase === 'idle' || phase === 'done') {
+      unlockAudio(); // iOS AudioContext während User-Geste entsperren
+      startMeasurement();
+    }
   });
 
   function diffLabel(d) {
