@@ -23,13 +23,18 @@
 - Korotkoff-Töne über den Browser (Web Audio API, synthetisiert)
 - Nadel zuckt bei jedem Herzschlag — kein digitaler Zahlenwert sichtbar
 - Variabler Herzrhythmus (55–95 bpm) pro Messung
-- 26 rotierende Blutdruckwerte aus allen Bereichen (normal bis hypertensiv III)
+- 26 Blutdruckwerte aus allen Bereichen (normal bis hypertensiv III)
+- Adaptives Wiederholen: schwierige Werte erscheinen häufiger (gewichtete Zufallsauswahl, persistent via localStorage)
+- Auskultatorische Lücke: bei hypertensiven Werten mit ~35 % Wahrscheinlichkeit simuliert
 - Sofortige Auswertung mit Toleranzbereich ±8 mmHg
+- Normwerte-Popover (ESH/ESC 2018) direkt in der Ergebnisansicht
 - Session-Score über mehrere Messungen
 
 ## Didaktisches Konzept
 
 Beim echten Korotkoff-Verfahren hört die Pflegeperson auf auskultatorische Töne und liest gleichzeitig vom Manometer ab. Genau das simuliert diese App: Der Druck ist nur an der Skala ablesbar — nicht als Zahl. So üben Lernende die gleichzeitige Wahrnehmung von Ton und Skala unter realistischen Bedingungen.
+
+Werte, bei denen Lernende daneben lagen, werden durch ein adaptives Gewichtungssystem häufiger wiederholt — nach dem Prinzip der Spaced Repetition, ohne dass dies sichtbar wird.
 
 ## Technik
 

@@ -117,7 +117,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 18px;
-  padding: 14px 12px 14px;
+  padding: 14px 6px 14px;
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
@@ -128,7 +128,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* Manometer SVG */
 .manometer-wrap {
   width: 100%;
-  max-width: 340px;
   position: relative;
 }
 .manometer-wrap svg { width: 100%; height: auto; display: block; }
@@ -455,7 +454,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
     <!-- Manometer -->
     <div class="manometer-wrap">
-      <svg viewBox="0 0 300 260" xmlns="http://www.w3.org/2000/svg" id="manometer-svg">
+      <svg viewBox="0 18 300 242" xmlns="http://www.w3.org/2000/svg" id="manometer-svg">
         <defs>
           <filter id="shadow-gauge">
             <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.12"/>
@@ -782,24 +781,49 @@ button { font: inherit; color: inherit; cursor: pointer; }
   let currentPressure = 0;
   let heartInterval = null;
 
-  // Rotierender BP-Pool – alle Bereiche gemischt
+  // ---- Adaptiver BP-Pool ----
+  // Jeder Wert hat ein Gewicht (1 = normal, höher = öfter wiederholen).
+  // Nach einem Fehler → Gewicht +2, nach richtigem Treffer → Gewicht −1 (min 1).
   const BP_POOL = [
     [115, 75], [118, 78], [120, 80], [122, 82], [125, 80], [128, 84], [130, 85],
     [135, 88], [138, 88], [140, 90], [142, 92], [145, 95], [148, 92], [150, 95],
     [155, 98], [158, 100], [160, 100], [165, 105], [168, 102], [170, 108],
     [175, 110], [178, 112], [182, 108], [185, 115], [190, 118], [195, 120]
   ];
-  let bpQueue = [...BP_POOL].sort(() => Math.random() - 0.5);
-  let bpIndex = 0;
+
+  // Gewichte aus localStorage laden oder mit 1 initialisieren
+  let bpWeights = (() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('bp-weights') || 'null');
+      if (saved && saved.length === BP_POOL.length) return saved;
+    } catch(e) {}
+    return BP_POOL.map(() => 1);
+  })();
+
+  let lastBpIndex = -1;
 
   function randomBP() {
-    const val = bpQueue[bpIndex];
-    bpIndex++;
-    if (bpIndex >= bpQueue.length) {
-      bpQueue = [...BP_POOL].sort(() => Math.random() - 0.5);
-      bpIndex = 0;
+    // Gewichtete Zufallsauswahl – zuletzt gezeigten Wert ausschließen
+    const total = bpWeights.reduce((s, w, i) => s + (i === lastBpIndex ? 0 : w), 0);
+    let r = Math.random() * total;
+    let idx = 0;
+    for (let i = 0; i < BP_POOL.length; i++) {
+      if (i === lastBpIndex) continue;
+      r -= bpWeights[i];
+      if (r <= 0) { idx = i; break; }
     }
-    return val;
+    lastBpIndex = idx;
+    return BP_POOL[idx];
+  }
+
+  function adaptBpWeight(correct) {
+    if (lastBpIndex < 0) return;
+    if (correct) {
+      bpWeights[lastBpIndex] = Math.max(1, bpWeights[lastBpIndex] - 1);
+    } else {
+      bpWeights[lastBpIndex] = Math.min(6, bpWeights[lastBpIndex] + 2);
+    }
+    try { localStorage.setItem('bp-weights', JSON.stringify(bpWeights)); } catch(e) {}
   }
 
   function resetUI() {
@@ -1048,6 +1072,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     // Session-Score
     sessionTotal++;
     if (allOk) sessionCorrect++;
+    adaptBpWeight(allOk);
 
 
     // Balken-Breite: wie nah war der Schüler? 100% = perfekt, 0% = doppelte Toleranz überschritten
