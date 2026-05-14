@@ -461,14 +461,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <!-- Eingabe nach der Messung -->
     <div class="measure-btns" id="input-wrap" style="display:none">
       <div class="measure-btn" style="cursor:default;">
-        <span style="font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--teal);">Systolisch</span>
-        <input id="inp-sys" type="number" inputmode="numeric" pattern="[0-9]*" min="50" max="300" placeholder="—" aria-label="Systolischer Wert in mmHg"
+        <label for="inp-sys" style="font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--teal); display:block; cursor:pointer;">Systolisch</label>
+        <input id="inp-sys" type="number" inputmode="numeric" pattern="[0-9]*" min="50" max="300" placeholder="—"
           style="width:100%; border:none; background:transparent; font-size:26px; font-weight:800; color:var(--ink); text-align:center; outline:none; font-variant-numeric:tabular-nums; font-family:inherit; margin:4px 0; -moz-appearance:textfield; -webkit-appearance:none;">
         <span style="font-size:10px; opacity:.6;">mmHg</span>
       </div>
       <div class="measure-btn" style="cursor:default;">
-        <span style="font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--teal);">Diastolisch</span>
-        <input id="inp-dia" type="number" inputmode="numeric" pattern="[0-9]*" min="30" max="200" placeholder="—" aria-label="Diastolischer Wert in mmHg"
+        <label for="inp-dia" style="font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--teal); display:block; cursor:pointer;">Diastolisch</label>
+        <input id="inp-dia" type="number" inputmode="numeric" pattern="[0-9]*" min="30" max="200" placeholder="—"
           style="width:100%; border:none; background:transparent; font-size:26px; font-weight:800; color:var(--ink); text-align:center; outline:none; font-variant-numeric:tabular-nums; font-family:inherit; margin:4px 0; -moz-appearance:textfield; -webkit-appearance:none;">
         <span style="font-size:10px; opacity:.6;">mmHg</span>
       </div>
@@ -692,7 +692,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   function playKorotkoff(intensity = 1.0) {
     try {
       const ctx = getAudioCtx();
-      if (ctx.state === 'suspended') ctx.resume();
+      if (ctx.state === 'suspended') { ctx.resume().catch(() => {}); return; }
       // Kurzer dumpfer Ton – wie Korotkoff-Geräusch
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
