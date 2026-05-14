@@ -388,6 +388,44 @@ button { font: inherit; color: inherit; cursor: pointer; }
   line-height: 1.5;
 }
 .gap-hint strong { color: var(--ink); }
+
+/* Info-Button (wie BMI-Rechner) */
+.info-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--muted); font-size: 13px; font-weight: 700;
+  font-family: serif; font-style: italic;
+  cursor: pointer; padding: 0; line-height: 1;
+  transition: all .15s;
+  position: absolute; top: 8px; left: 8px;
+}
+.info-btn:hover, .info-btn[aria-expanded="true"] {
+  color: var(--teal); border-color: var(--teal);
+  background: rgba(13,115,119,.08);
+}
+.bp-norm-wrap { position: relative; width: 100%; }
+.bp-norm-pop {
+  margin-top: 10px;
+  padding: 13px 14px;
+  background: var(--bg2);
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--body);
+}
+.bp-norm-pop[hidden] { display: none; }
+.bp-norm-pop strong { color: var(--ink); font-weight: 600; }
+.bp-legend { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.bp-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+}
+.bp-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.bp-legend-name { color: var(--ink); font-weight: 600; flex: 1; white-space: nowrap; }
+.bp-legend-range { color: var(--muted); font-variant-numeric: tabular-nums; margin-left: auto; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -972,6 +1010,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
     }
   });
 
+  // Normwerte-Popover schließen bei Klick außerhalb (einmalig gesetzt)
+  document.addEventListener('click', (e) => {
+    const pop = $('bp-norm-pop');
+    const btn = $('bp-norm-btn');
+    if (pop && !pop.hidden && !e.target.closest('#bp-norm-pop, #bp-norm-btn')) {
+      pop.hidden = true;
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
   function diffLabel(d) {
     if (d === 0) return '✓ Genau getroffen!';
     if (d > 0)  return '+' + d + ' mmHg';
@@ -1021,17 +1069,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
       ? (allOk ? '1 von 1 richtig' : '0 von 1 richtig')
       : `${sessionCorrect} von ${sessionTotal} richtig`;
 
-    // Auskultatorische Lücke – Hinweis wenn vorhanden
-    const gapHint = hasGap ? `
-      <div class="gap-hint">
-        ⚠ <strong>Auskultatorische Lücke</strong> bei dieser Messung:
-        Töne zwischen <strong>${gapLow}</strong> und <strong>${gapHigh} mmHg</strong> unterbrochen.
-        ${hasSys && measuredSys <= gapHigh && measuredSys >= gapLow - 10
-          ? 'Du hast wahrscheinlich die Lücke als Ende der Töne interpretiert — systolischer Wert dadurch zu niedrig.'
-          : 'Gut gemacht — du hast trotz Lücke den richtigen Wert erkannt!'}
-      </div>` : '';
+    const gapHint = '';
 
-    const html = `<div class="card res-hero ${verdictCls}" style="width:100%;">
+    const html = `<div class="bp-norm-wrap">
+      <div class="card res-hero ${verdictCls}" style="width:100%;position:relative;">
+        <button class="info-btn" id="bp-norm-btn" aria-expanded="false" aria-label="Blutdruck-Normwerte anzeigen">i</button>
         <div class="res-col">
           <span class="res-col-label">Richtig</span>
           <span class="res-col-val">${trueSys}/${trueDia}</span>
@@ -1047,10 +1089,33 @@ button { font: inherit; color: inherit; cursor: pointer; }
           <span class="res-col-val ${verdictCls}">${hasSys ? measuredSys : '–'}/${hasDia ? measuredDia : '–'}</span>
           <span style="font-size:10px;color:var(--muted);font-weight:500">mmHg</span>
         </div>
+      </div>
+      <div class="bp-norm-pop" id="bp-norm-pop" hidden>
+        <strong>Blutdruck-Klassifikation</strong> nach ESH/ESC 2018 (für Erwachsene):
+        <div class="bp-legend">
+          <div class="bp-legend-row"><span class="bp-legend-dot" style="background:#4ade80"></span><span class="bp-legend-name">Optimal</span><span class="bp-legend-range">&lt;120 / &lt;80</span></div>
+          <div class="bp-legend-row"><span class="bp-legend-dot" style="background:#86efac"></span><span class="bp-legend-name">Normal</span><span class="bp-legend-range">120–129 / 80–84</span></div>
+          <div class="bp-legend-row"><span class="bp-legend-dot" style="background:#fde68a"></span><span class="bp-legend-name">Hochnormal</span><span class="bp-legend-range">130–139 / 85–89</span></div>
+          <div class="bp-legend-row"><span class="bp-legend-dot" style="background:#fb923c"></span><span class="bp-legend-name">Hypertonie Grad 1</span><span class="bp-legend-range">140–159 / 90–99</span></div>
+          <div class="bp-legend-row"><span class="bp-legend-dot" style="background:#f87171"></span><span class="bp-legend-name">Hypertonie Grad 2</span><span class="bp-legend-range">160–179 / 100–109</span></div>
+          <div class="bp-legend-row"><span class="bp-legend-dot" style="background:#dc2626"></span><span class="bp-legend-name">Hypertonie Grad 3</span><span class="bp-legend-range">≥180 / ≥110</span></div>
+        </div>
+      </div>
     </div>${gapHint}`;
 
     const wrap = $('result-wrap');
     wrap.innerHTML = html;
+
+    // Info-Popover Toggle (Listener direkt auf Button – kein globales Stapeln)
+    $('bp-norm-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const pop = $('bp-norm-pop');
+      const btn = $('bp-norm-btn');
+      const open = pop.hidden;
+      pop.hidden = !open;
+      btn.setAttribute('aria-expanded', String(open));
+    });
+
     wrap.style.display = 'block';
     wrap.classList.remove('res-fadein');
     requestAnimationFrame(() => wrap.classList.add('res-fadein'));
