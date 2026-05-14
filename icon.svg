@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f8a8f"/>
+      <stop offset="100%" stop-color="#094f52"/>
+    </linearGradient>
+    <linearGradient id="needleGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.55)"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="114" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="114" fill="none"
+        stroke="rgba(255,255,255,0.08)" stroke-width="12"/>
+
+  <!-- Gauge housing — center (256,256) r=172 -->
+  <circle cx="256" cy="256" r="172"
+          fill="rgba(255,255,255,0.06)"
+          stroke="rgba(255,255,255,0.12)" stroke-width="3"/>
+
+  <!-- Gauge arc track 270° — center (256,256) r=155
+       Start -135°: x=256+155*cos(-225°)=256-109.6=146, y=256+155*sin(-225°→+0.707)=256+109.6=366
+       End   +135°: x=256+109.6=366, y=256+109.6=366  -->
+  <path d="M 146 366 A 155 155 0 1 1 366 366"
+        fill="none" stroke="rgba(255,255,255,0.18)"
+        stroke-width="20" stroke-linecap="round"/>
+
+  <!-- Green zone 0–130 mmHg: -135° to -18°
+       At -18°: rad=(-108°), cos=-0.309→x=256+155*(-0.309)=208, sin=-0.951→y=256+155*(-0.951)=109 -->
+  <path d="M 146 366 A 155 155 0 0 1 208 109"
+        fill="none" stroke="rgba(100,220,140,0.6)"
+        stroke-width="20" stroke-linecap="butt"/>
+
+  <!-- Yellow zone 130–160 mmHg: -18° to +9°
+       At +9°: rad=(-81°), cos=0.156→x=256+155*0.156=280, sin=-0.988→y=256+155*(-0.988)=103 -->
+  <path d="M 208 109 A 155 155 0 0 1 280 103"
+        fill="none" stroke="rgba(255,205,60,0.6)"
+        stroke-width="20" stroke-linecap="butt"/>
+
+  <!-- Red zone 160–300 mmHg: +9° to +135° -->
+  <path d="M 280 103 A 155 155 0 0 1 366 366"
+        fill="none" stroke="rgba(255,90,90,0.5)"
+        stroke-width="20" stroke-linecap="butt"/>
+
+  <!-- Rounded end caps in zone color -->
+  <circle cx="146" cy="366" r="10" fill="rgba(100,220,140,0.6)"/>
+  <circle cx="366" cy="366" r="10" fill="rgba(255,90,90,0.5)"/>
+
+  <!-- Inner circle -->
+  <circle cx="256" cy="256" r="96"
+          fill="rgba(255,255,255,0.07)"
+          stroke="rgba(255,255,255,0.2)" stroke-width="2.5"/>
+
+  <!-- Needle at ~120 mmHg (angle -27°)
+       tip r=128: cos=-0.454→x=256-58=198, sin=-0.891→y=256-114=142 -->
+  <line x1="256" y1="256" x2="198" y2="142"
+        stroke="url(#needleGrad)" stroke-width="10"
+        stroke-linecap="round"/>
+
+  <!-- Counter-tail (opposite, r=26)
+       angle +153°: cos=0.454→x=256+12=268, sin=0.891→y=256+23=279 -->
+  <line x1="256" y1="256" x2="268" y2="279"
+        stroke="rgba(255,255,255,0.4)" stroke-width="8"
+        stroke-linecap="round"/>
+
+  <!-- Pivot -->
+  <circle cx="256" cy="256" r="14" fill="white"/>
+  <circle cx="256" cy="256" r="6"  fill="#0d7377"/>
+</svg>

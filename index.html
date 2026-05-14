@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0d7377">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Blutdruck-Trainer">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+<link rel="manifest" href="manifest.json">
+<meta property="og:title" content="Blutdruck-Trainer">
+<meta property="og:description" content="Blutdruckmessung nach der Korotkoff-Methode üben — für die Pflegeausbildung.">
+<meta property="og:image" content="og-image.png">
+<meta property="og:type" content="website">
+<title>Blutdruck-Trainer</title>
+<style>
+:root {
+  --teal: #0d7377;
+  --teal-dark: #0a5c5f;
+  --teal-soft: #d6ecec;
+  --teal-light: #e6f3f3;
+  --bg: #f6f8f7;
+  --bg2: #eaf2f1;
+  --card: #ffffff;
+  --ink: #0b1818;
+  --body: #2d3d3d;
+  --muted: #6b7b7b;
+  --border: #e4eae9;
+  --ok: #639922;
+  --ok-soft: #eaf3de;
+  --warn: #d97706;
+  --warn-soft: #fef3c7;
+  --err: #dc2626;
+  --err-soft: #fee2e2;
+  --shadow-card: 0 1px 0 rgba(0,0,0,.02), 0 12px 28px rgba(13,24,24,.08);
+}
+@media (prefers-color-scheme: dark) {
+  html:not(.light) {
+    --bg: #0a1414; --bg2: #0f1c1c; --card: #14252a;
+    --ink: #eef2f1; --body: #b8c2c1; --muted: #7c8b8a;
+    --border: #1f3030; --teal-light: #1a3033; --teal-soft: #1e3d3f;
+    --ok-soft: #0d3a1f; --warn-soft: #3a2812; --err-soft: #3a1212;
+    --shadow-card: 0 1px 0 rgba(0,0,0,.4), 0 12px 28px rgba(0,0,0,.35);
+  }
+}
+html.dark {
+  --bg: #0a1414; --bg2: #0f1c1c; --card: #14252a;
+  --ink: #eef2f1; --body: #b8c2c1; --muted: #7c8b8a;
+  --border: #1f3030; --teal-light: #1a3033; --teal-soft: #1e3d3f;
+  --ok-soft: #0d3a1f; --warn-soft: #3a2812; --err-soft: #3a1212;
+  --shadow-card: 0 1px 0 rgba(0,0,0,.4), 0 12px 28px rgba(0,0,0,.35);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top,16px) 16px env(safe-area-inset-bottom,16px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Header */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0 4px;
+  position: relative;
+}
+.brand { display: flex; flex-direction: column; gap: 2px; }
+.brand-name { font-size: 20px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; }
+.brand-sub  { font-size: 12px; color: var(--muted); font-weight: 500; }
+.icon-btn {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: grid; place-items: center;
+  color: var(--body);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.icon-btn:active { background: var(--teal-light); }
+
+/* Infokarte */
+.learn-card {
+  background: var(--teal-light);
+  border-radius: 14px;
+  padding: 13px 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--body);
+}
+.learn-card strong { color: var(--ink); }
+
+/* Manometer-Karte */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px 12px 14px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Manometer SVG */
+.manometer-wrap {
+  width: 100%;
+  max-width: 340px;
+  position: relative;
+}
+.manometer-wrap svg { width: 100%; height: auto; display: block; }
+
+/* Manschetten-Visualisierung */
+.cuff-bar {
+  display: none; /* entfernt */
+}
+.cuff-bar-fill {
+  display: none;
+  width: 0%;
+}
+
+/* Status-Text */
+.status-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: .02em;
+  text-align: center;
+  min-height: 20px;
+}
+
+
+/* Eingabe-Buttons */
+.measure-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+.measure-btn {
+  padding: 16px 10px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--bg2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: all .1s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.measure-btn:active { transform: scale(.96); }
+.measure-btn.done-sys { background: var(--teal-soft); border-color: var(--teal); color: var(--teal-dark); }
+.measure-btn.done-dia { background: var(--teal-soft); border-color: var(--teal); color: var(--teal-dark); }
+.measure-btn .btn-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+  min-height: 28px;
+}
+.measure-btn.done-sys .btn-val,
+.measure-btn.done-dia .btn-val { color: var(--teal-dark); }
+
+/* Haupt-Aktions-Button */
+.action-btn {
+  width: 100%;
+  padding: 15px;
+  border-radius: 14px;
+  background: var(--teal);
+  border: none;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  transition: opacity .15s;
+}
+.action-btn:active { opacity: .8; }
+.action-btn:disabled { opacity: .4; cursor: not-allowed; }
+.action-btn.secondary {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--body);
+}
+
+/* ── Ergebnis ── */
+.res-hero {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 14px;
+}
+.res-hero.ok   { background: var(--ok-soft);   border-color: #a3d47a; }
+.res-hero.warn { background: var(--warn-soft);  border-color: #fbbf24; }
+.res-hero.err  { background: var(--err-soft);   border-color: #f87171; }
+
+.res-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.res-col-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--muted);
+}
+.res-col-val {
+  font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.1;
+}
+.res-col-val.ok   { color: #2d7a0a; }
+.res-col-val.warn { color: #92400e; }
+.res-col-val.err  { color: #991b1b; }
+.res-divider {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: var(--muted);
+}
+.res-verdict {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+}
+.res-verdict.ok   { color: #2d7a0a; }
+.res-verdict.warn { color: #92400e; }
+.res-verdict.err  { color: #991b1b; }
+
+.rr-row { margin: 0 0 10px; }
+.rr-row:last-child { margin: 0; }
+.rr-row-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 5px; font-size: 13px;
+}
+.rr-row-head strong { font-variant-numeric: tabular-nums; }
+.rr-bar-track {
+  height: 6px; background: var(--border); border-radius: 4px; overflow: hidden;
+}
+.rr-bar-fill {
+  height: 100%; border-radius: 4px; transition: width .6s ease;
+}
+.rr-bar-fill.green { background: var(--ok); }
+.rr-bar-fill.red   { background: var(--err); }
+
+
+.diff-ok   { color: #3b9a22; }
+.diff-warn { color: #d97706; }
+.diff-err  { color: #dc2626; }
+
+/* Schwierigkeits-Chips */
+.chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.chip.active {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: white;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  align-self: flex-start;
+}
+
+/* Korotkoff-Panel */
+.korot-details {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.korot-details summary {
+  padding: 12px 16px;
+  font-size: 13px; font-weight: 700; color: var(--ink);
+  cursor: pointer; list-style: none;
+  display: flex; justify-content: space-between; align-items: center;
+  user-select: none;
+}
+.korot-details summary::-webkit-details-marker { display: none; }
+.korot-arrow { font-size: 11px; color: var(--muted); transition: transform .2s; }
+.korot-details[open] .korot-arrow { transform: rotate(180deg); }
+.korot-body {
+  padding: 0 16px 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.korot-row {
+  display: flex; gap: 12px; align-items: flex-start;
+  font-size: 13px; color: var(--body); line-height: 1.45;
+}
+.korot-phase {
+  min-width: 24px; height: 24px;
+  background: var(--teal); color: #fff;
+  border-radius: 50%;
+  font-size: 11px; font-weight: 800;
+  display: grid; place-items: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+
+/* Session-Score */
+.session-score {
+  font-size: 12px; color: var(--muted); font-weight: 600;
+  text-align: center; padding-top: 2px;
+}
+.session-score strong { color: var(--ink); }
+
+.footer {
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 4px 0 14px;
+}
+.footer a { color: var(--muted); text-decoration: none; }
+
+/* Info-Karte ausblendbar */
+.learn-card {
+  position: relative;
+  overflow: hidden;
+  transition: max-height .35s ease, opacity .3s ease, padding .35s ease, margin .35s ease;
+}
+.learn-card-close {
+  position: absolute;
+  top: 7px; right: 9px;
+  background: none; border: none;
+  font-size: 15px; color: var(--muted);
+  cursor: pointer; padding: 2px 4px;
+  line-height: 1; border-radius: 5px;
+  opacity: .6;
+}
+.learn-card-close:hover { opacity: 1; }
+
+/* Ergebnis Fade-in */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.res-fadein { animation: fadeInUp .3s ease forwards; }
+
+/* Status pulsieren */
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .45; }
+}
+.status-pulse { animation: statusPulse 1.3s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-name">Blutdruck-Trainer</div>
+      <div class="brand-sub">Korotkoff-Methode üben</div>
+    </div>
+    <button class="icon-btn" id="theme-btn" aria-label="Farbschema umschalten">
+      <svg id="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <svg id="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+
+  <!-- Info -->
+  <div class="learn-card" id="learn-card">
+    <button class="learn-card-close" id="learn-close" aria-label="Hinweis schließen">✕</button>
+    Drücke <strong>„Start"</strong> – die Manschette pumpt auf und lässt langsam ab. <strong>Höre auf die Töne:</strong> Beim ersten Ton → systolischer Wert, beim letzten Ton → diastolischer Wert. Danach gibst du beide Werte ein. <strong>Ton einschalten!</strong>
+  </div>
+
+
+  <!-- Manometer + Steuerung -->
+  <div class="card">
+
+    <!-- Manometer -->
+    <div class="manometer-wrap">
+      <svg viewBox="0 0 300 260" xmlns="http://www.w3.org/2000/svg" id="manometer-svg">
+        <defs>
+          <filter id="shadow-gauge">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.12"/>
+          </filter>
+        </defs>
+
+        <!-- Gehäuse -->
+        <circle cx="150" cy="140" r="115" fill="var(--card)" stroke="var(--border)" stroke-width="3" filter="url(#shadow-gauge)"/>
+        <circle cx="150" cy="140" r="108" fill="var(--bg2)" stroke="var(--border)" stroke-width="1"/>
+
+        <!-- Bogenspur + Farbzonen -->
+        <path id="arc-track" fill="none"/>
+        <path id="zone-ok"   d="" fill="none"/>
+        <path id="zone-warn" d="" fill="none"/>
+        <path id="zone-err"  d="" fill="none"/>
+        <circle id="zone-cap-start" r="4"/>
+        <circle id="zone-cap-end"   r="4"/>
+
+        <!-- Skalierung (Striche) -->
+        <g id="scale-marks"></g>
+
+        <!-- Innerer Ring -->
+        <circle cx="150" cy="140" r="72" fill="var(--card)" stroke="var(--border)" stroke-width="1.5"/>
+
+        <!-- Beschriftung (über dem inneren Ring) -->
+        <g id="scale-labels"></g>
+
+        <!-- Einheit -->
+        <text x="150" y="170" text-anchor="middle" font-family="Inter,-apple-system,sans-serif"
+              font-size="8.5" font-weight="600" fill="var(--muted)" letter-spacing=".06em">mmHg</text>
+
+        <!-- Aktueller Druck (ausgeblendet – Schüler liest von Skala ab) -->
+        <text x="150" y="148" text-anchor="middle" font-family="Inter,-apple-system,sans-serif"
+              font-size="32" font-weight="800" fill="var(--ink)" id="pressure-display" opacity="0">0</text>
+
+        <!-- Nadel -->
+        <g id="needle-group" transform="rotate(-135 150 140)">
+          <line x1="150" y1="162" x2="150" y2="47" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+          <line x1="150" y1="140" x2="150" y2="163" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" opacity="0.2"/>
+          <circle cx="150" cy="140" r="9" fill="var(--teal)"/>
+          <circle cx="150" cy="140" r="4" fill="var(--card)"/>
+        </g>
+
+        <!-- Beschriftung wird per JS gezeichnet -->
+      </svg>
+    </div>
+
+    <!-- Status -->
+    <div class="status-label" id="status-label">Bereit zum Starten</div>
+
+    <!-- Eingabe nach der Messung -->
+    <div class="measure-btns" id="input-wrap" style="display:none">
+      <div class="measure-btn" style="cursor:default;">
+        <span style="font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--teal);">Systolisch</span>
+        <input id="inp-sys" type="number" inputmode="numeric" pattern="[0-9]*" min="50" max="300" placeholder="—"
+          style="width:100%; border:none; background:transparent; font-size:26px; font-weight:800; color:var(--ink); text-align:center; outline:none; font-variant-numeric:tabular-nums; font-family:inherit; margin:4px 0; -moz-appearance:textfield; -webkit-appearance:none;">
+        <span style="font-size:10px; opacity:.6;">Erster Ton (mmHg)</span>
+      </div>
+      <div class="measure-btn" style="cursor:default;">
+        <span style="font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--teal);">Diastolisch</span>
+        <input id="inp-dia" type="number" inputmode="numeric" pattern="[0-9]*" min="30" max="200" placeholder="—"
+          style="width:100%; border:none; background:transparent; font-size:26px; font-weight:800; color:var(--ink); text-align:center; outline:none; font-variant-numeric:tabular-nums; font-family:inherit; margin:4px 0; -moz-appearance:textfield; -webkit-appearance:none;">
+        <span style="font-size:10px; opacity:.6;">Letzter Ton (mmHg)</span>
+      </div>
+    </div>
+    <button class="action-btn secondary" id="btn-auswerten" style="display:none;">✓ Auswerten</button>
+
+    <!-- Ergebnis -->
+    <div id="result-wrap" style="width:100%; display:none;"></div>
+
+    <!-- Aktions-Button -->
+    <button class="action-btn" id="action-btn">▶ Messung starten</button>
+  </div>
+
+  <div class="footer"><a href="https://florianloyns.github.io/Impressum/" target="_blank" rel="noopener">Impressum</a></div>
+
+</div>
+<script>
+(function() {
+  const $ = id => document.getElementById(id);
+
+  // ---- Theme ----
+  function syncThemeIcon() {
+    const isDark = document.documentElement.classList.contains('dark') ||
+      (!document.documentElement.classList.contains('light') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    $('theme-icon-sun').style.display = isDark ? 'block' : 'none';
+    $('theme-icon-moon').style.display = isDark ? 'none' : 'block';
+  }
+  try { const s = localStorage.getItem('bp-theme'); if (s) document.documentElement.classList.add(s); } catch(e){}
+  syncThemeIcon();
+
+  // ---- Info-Karte ausblendbar ----
+  (function() {
+    const card = $('learn-card');
+    try { if (localStorage.getItem('bp-info-hidden') === '1') { card.style.display = 'none'; } } catch(e){}
+    $('learn-close').addEventListener('click', () => {
+      const h = card.scrollHeight;
+      card.style.maxHeight = h + 'px';
+      card.style.opacity = '1';
+      requestAnimationFrame(() => {
+        card.style.maxHeight = '0';
+        card.style.opacity = '0';
+        card.style.paddingTop = '0';
+        card.style.paddingBottom = '0';
+        card.style.marginBottom = '0';
+      });
+      setTimeout(() => { card.style.display = 'none'; }, 380);
+      try { localStorage.setItem('bp-info-hidden', '1'); } catch(e){}
+    });
+  })();
+  $('theme-btn').addEventListener('click', () => {
+    const html = document.documentElement;
+    const isDark = html.classList.contains('dark') ||
+      (!html.classList.contains('light') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    html.classList.remove('dark', 'light');
+    html.classList.add(isDark ? 'light' : 'dark');
+    try { localStorage.setItem('bp-theme', isDark ? 'light' : 'dark'); } catch(e){}
+    syncThemeIcon();
+  });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncThemeIcon);
+
+  // ---- Manometer Skalierung ----
+  const CX = 150, CY = 140, R_OUTER = 100, R_INNER = 80;
+  const START_DEG = -135, END_DEG = 135; // 270° Bogen
+  const MAX_PRESSURE = 300;
+
+  function pressureToAngle(p) {
+    return START_DEG + (p / MAX_PRESSURE) * (END_DEG - START_DEG);
+  }
+
+  function polarToXY(angleDeg, r) {
+    const rad = (angleDeg - 90) * Math.PI / 180;
+    return { x: CX + r * Math.cos(rad), y: CY + r * Math.sin(rad) };
+  }
+
+  function arcPath(startDeg, endDeg, r) {
+    const s = polarToXY(startDeg, r);
+    const e = polarToXY(endDeg, r);
+    const large = (endDeg - startDeg) > 180 ? 1 : 0;
+    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
+  }
+
+  // Farbzonen zeichnen (als Bogensegmente)
+  function drawZones() {
+    const R_ARC = 103, SW = 8;
+
+    // Grauer Hintergrund-Track
+    const track = $('arc-track');
+    track.setAttribute('d', arcPath(pressureToAngle(0), pressureToAngle(300), R_ARC));
+    track.setAttribute('stroke', 'var(--border)');
+    track.setAttribute('stroke-width', SW + 2);
+    track.setAttribute('stroke-linecap', 'round');
+
+    const zones = [
+      { id: 'zone-ok',   from: 0,   to: 130, color: 'rgba(90,195,90,0.65)'  },
+      { id: 'zone-warn', from: 130, to: 160, color: 'rgba(240,170,40,0.65)' },
+      { id: 'zone-err',  from: 160, to: 300, color: 'rgba(220,60,60,0.55)'  },
+    ];
+    zones.forEach(z => {
+      const a1 = pressureToAngle(z.from);
+      const a2 = pressureToAngle(z.to);
+      const el = $(z.id);
+      el.setAttribute('d', arcPath(a1, a2, R_ARC));
+      el.setAttribute('stroke', z.color);
+      el.setAttribute('stroke-width', SW);
+      el.setAttribute('stroke-linecap', 'butt');
+    });
+
+    // Runde Abschlüsse an den äußeren Enden (grün links, rot rechts)
+    const startPt = polarToXY(pressureToAngle(0),   R_ARC);
+    const endPt   = polarToXY(pressureToAngle(300), R_ARC);
+    const cs = $('zone-cap-start');
+    cs.setAttribute('cx', startPt.x); cs.setAttribute('cy', startPt.y);
+    cs.setAttribute('fill', 'rgba(90,195,90,0.65)');
+    const ce = $('zone-cap-end');
+    ce.setAttribute('cx', endPt.x); ce.setAttribute('cy', endPt.y);
+    ce.setAttribute('fill', 'rgba(220,60,60,0.55)');
+  }
+
+  // Skalenstriche zeichnen
+  function drawScale() {
+    const gTicks  = $('scale-marks');
+    const gLabels = $('scale-labels');
+    gTicks.innerHTML  = '';
+    gLabels.innerHTML = '';
+    const ns = 'http://www.w3.org/2000/svg';
+
+    for (let p = 0; p <= 300; p += 2) {
+      const isMajor = p % 20 === 0;
+      const isMid   = p % 10 === 0 && !isMajor;
+      const angleDeg = pressureToAngle(p);
+
+      // Tick-Strich
+      const r1 = isMajor ? 92 : isMid ? 95 : 99;
+      const p1 = polarToXY(angleDeg, r1);
+      const p2 = polarToXY(angleDeg, 104);
+      const line = document.createElementNS(ns, 'line');
+      line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+      line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+      line.setAttribute('stroke', 'var(--ink)');
+      line.setAttribute('stroke-width', isMajor ? '2' : isMid ? '1.2' : '0.7');
+      line.setAttribute('opacity', isMajor ? '0.6' : isMid ? '0.35' : '0.2');
+      gTicks.appendChild(line);
+
+      // Label alle 20 mmHg – direkt neben den Strichen
+      if (isMajor) {
+        const tp = polarToXY(angleDeg, 84);
+        const txt = document.createElementNS(ns, 'text');
+        txt.setAttribute('x', tp.x);
+        txt.setAttribute('y', tp.y);
+        txt.setAttribute('text-anchor', 'middle');
+        txt.setAttribute('dominant-baseline', 'middle');
+        txt.setAttribute('font-size', '9');
+        txt.setAttribute('font-weight', '700');
+        txt.setAttribute('fill', 'var(--ink)');
+        txt.setAttribute('font-family', 'Inter,sans-serif');
+        txt.textContent = p;
+        gLabels.appendChild(txt);
+      }
+    }
+  }
+
+  drawZones();
+  drawScale();
+
+  // ---- Nadel animieren ----
+  let displayPressure = 0;
+  let targetPressure = 0;
+  let animFrame = null;
+  let needleTwitch = 0;
+  let twitchStart = 0;
+  const TWITCH_AMP = 7;   // mmHg Ausschlag bei Herzschlag
+  const TWITCH_DUR = 140; // ms bis Nadel wieder zurück
+
+  function setNeedle(p) {
+    const angle = pressureToAngle(Math.max(0, Math.min(300, p)));
+    $('needle-group').setAttribute('transform', `rotate(${angle} 150 140)`);
+    $('pressure-display').textContent = Math.round(p);
+  }
+
+  function animateTo(target, durationMs, onDone) {
+    cancelAnimationFrame(animFrame);
+    const start = displayPressure;
+    const startTime = performance.now();
+    function step(now) {
+      const t = Math.min((now - startTime) / durationMs, 1);
+      // Ease-out cubic: schnell starten, weich ankommen
+      const eased = 1 - Math.pow(1 - t, 3);
+      displayPressure = start + (target - start) * eased;
+      setNeedle(displayPressure);
+      if (t < 1) { animFrame = requestAnimationFrame(step); }
+      else { displayPressure = target; setNeedle(target); if (onDone) onDone(); }
+    }
+    animFrame = requestAnimationFrame(step);
+  }
+
+  // ---- Audio ----
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // iOS entsperrt AudioContext erst nach User-Geste
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  // Audio-Kontext beim ersten Touch vorab entsperren
+  document.addEventListener('touchstart', () => getAudioCtx(), { once: true });
+
+  function playKorotkoff(intensity = 1.0) {
+    try {
+      const ctx = getAudioCtx();
+      // Kurzer dumpfer Ton – wie Korotkoff-Geräusch
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      filter.type = 'lowpass';
+      filter.frequency.value = 180;
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(80, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.12);
+
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.35 * intensity, ctx.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+    } catch(e) {}
+  }
+
+  // Toleranz (fest, ±4 mmHg)
+  const TOLERANCE = 8;
+
+
+  // ---- Messung ----
+  let phase = 'idle'; // idle | inflating | deflating | done
+  let trueSys = 0, trueDia = 0;
+  let measuredSys = null, measuredDia = null;
+  let sessionTotal = 0, sessionCorrect = 0;
+  let deflateInterval = null;
+  let currentPressure = 0;
+  let heartInterval = null;
+
+  // Rotierender BP-Pool – alle Bereiche gemischt
+  const BP_POOL = [
+    [115, 75], [118, 78], [120, 80], [122, 82], [125, 80], [128, 84], [130, 85],
+    [135, 88], [138, 88], [140, 90], [142, 92], [145, 95], [148, 92], [150, 95],
+    [155, 98], [158, 100], [160, 100], [165, 105], [168, 102], [170, 108],
+    [175, 110], [178, 112], [182, 108], [185, 115], [190, 118], [195, 120]
+  ];
+  let bpQueue = [...BP_POOL].sort(() => Math.random() - 0.5);
+  let bpIndex = 0;
+
+  function randomBP() {
+    const val = bpQueue[bpIndex];
+    bpIndex++;
+    if (bpIndex >= bpQueue.length) {
+      bpQueue = [...BP_POOL].sort(() => Math.random() - 0.5);
+      bpIndex = 0;
+    }
+    return val;
+  }
+
+  function resetUI() {
+    $('input-wrap').style.display = 'none';
+    $('btn-auswerten').style.display = 'none';
+    $('inp-sys').value = '';
+    $('inp-dia').value = '';
+    $('result-wrap').style.display = 'none';
+    $('result-wrap').innerHTML = '';
+    measuredSys = null;
+    measuredDia = null;
+  }
+
+  function showSoundActive(active) {
+    // Vibration-Feedback beim ersten/letzten Ton
+    if (active) {
+      try { navigator.vibrate && navigator.vibrate(30); } catch(e) {}
+    }
+  }
+
+  function startMeasurement() {
+    if (phase === 'deflating') return;
+    resetUI();
+    phase = 'inflating';
+
+    [trueSys, trueDia] = randomBP();
+    // Aufpumpen bis ~30 über systolisch
+    const inflateTarget = trueSys + 30;
+
+    $('action-btn').disabled = true;
+    $('action-btn').textContent = '⏫ Pumpt auf…';
+    $('status-label').textContent = 'Manschette wird aufgepumpt…';
+
+    // Aufpumpen ~1.5 Sek
+    animateTo(inflateTarget, 1500, () => {
+      phase = 'deflating';
+      $('status-label').textContent = 'Luft ablassen – merke dir die Werte!';
+      $('action-btn').textContent = '⏬ Ablassen läuft…';
+
+      currentPressure = inflateTarget;
+      let soundActive = false;
+
+      // Herzschlag-Timing – variiert pro Messung (55–95 bpm)
+      const bpm = 55 + Math.floor(Math.random() * 41);
+      const beatMs = Math.round(60000 / bpm);
+
+      // Druckabfall: von inflateTarget auf 0 in ~18 Sek
+      const deflateTime = 18000;
+      const dropPerMs = inflateTarget / deflateTime;
+      const startTime = performance.now();
+
+      clearInterval(deflateInterval);
+      clearInterval(heartInterval);
+
+      // Anzeige ausblenden – Schüler soll von der Skala ablesen
+      const sl = $('status-label');
+      sl.textContent = 'Auf die Töne achten!';
+      sl.classList.add('status-pulse');
+      let firstToneHeard = false;
+
+      // Herzschlag-Töne + Nadel-Twitch (separat vom Rendering)
+      heartInterval = setInterval(() => {
+        if (phase !== 'deflating') { clearInterval(heartInterval); return; }
+        const p = Math.max(0, inflateTarget - dropPerMs * (performance.now() - startTime));
+        const shouldSound = p <= trueSys && p > trueDia;
+        if (shouldSound) {
+          const mid = (trueSys + trueDia) / 2;
+          const dist = Math.abs(p - mid) / Math.max(1, (trueSys - trueDia) / 2);
+          playKorotkoff(0.6 + 0.4 * (1 - dist));
+          // Nadel-Twitch auslösen
+          needleTwitch = TWITCH_AMP;
+          twitchStart = performance.now();
+          // Statustext nach erstem Ton wechseln
+          if (!firstToneHeard) {
+            firstToneHeard = true;
+            sl.textContent = 'Systolisch gehört – weiter hören!';
+          }
+        }
+      }, beatMs);
+
+      // Schnellablassen nach diastolischem Sicherheitsabstand
+      const POST_DIA_BUFFER = 3000; // ms langsam weiterlassen nach letztem Ton
+      const FAST_RELEASE_MS = 900;  // ms für schnellen Restdruckabbau
+      let postDiaTime     = null;
+      let fastReleaseStart = null;
+      let fastReleaseFrom  = null;
+
+      // Nadel + Display: smooth per requestAnimationFrame
+      function deflateFrame() {
+        if (phase !== 'deflating') return;
+        const now = performance.now();
+
+        // Normaler linearer Druckabfall
+        const normalPressure = Math.max(0, inflateTarget - dropPerMs * (now - startTime));
+
+        // Diastole unterschritten → Sicherheitsabstand starten
+        if (normalPressure < trueDia && !postDiaTime) {
+          postDiaTime = now;
+        }
+
+        // Sicherheitsabstand abgelaufen → Schnellablassen einleiten
+        if (postDiaTime && !fastReleaseStart && (now - postDiaTime) >= POST_DIA_BUFFER) {
+          fastReleaseStart = now;
+          fastReleaseFrom  = currentPressure;
+        }
+
+        // Druck berechnen
+        if (fastReleaseStart) {
+          const t = Math.min((now - fastReleaseStart) / FAST_RELEASE_MS, 1);
+          const eased = 1 - Math.pow(1 - t, 2); // ease-in: langsam starten, dann zügig
+          currentPressure = Math.max(0, fastReleaseFrom * (1 - eased));
+        } else {
+          currentPressure = normalPressure;
+        }
+
+        const shouldSound = currentPressure <= trueSys && currentPressure > trueDia;
+        if (shouldSound !== soundActive) {
+          soundActive = shouldSound;
+          showSoundActive(soundActive);
+        }
+
+        // Twitch-Offset abklingen lassen
+        if (needleTwitch > 0) {
+          const elapsed = now - twitchStart;
+          needleTwitch = elapsed < TWITCH_DUR
+            ? TWITCH_AMP * Math.pow(1 - elapsed / TWITCH_DUR, 2)
+            : 0;
+        }
+
+        displayPressure = currentPressure;
+        setNeedle(currentPressure + needleTwitch);
+
+        if (currentPressure <= 0) {
+          clearInterval(heartInterval);
+          endMeasurement();
+          return;
+        }
+        animFrame = requestAnimationFrame(deflateFrame);
+      }
+      animFrame = requestAnimationFrame(deflateFrame);
+    });
+  }
+
+  function endMeasurement() {
+    phase = 'done';
+    needleTwitch = 0;
+    clearInterval(heartInterval);
+    showSoundActive(false);
+    const sl = $('status-label');
+    sl.classList.remove('status-pulse');
+    sl.textContent = 'Was hast du gemessen?';
+
+    // Nadel auf 0 zurück, dann Eingabefelder zeigen
+    animateTo(0, 1000, () => {
+      $('input-wrap').style.display = 'grid';
+      $('btn-auswerten').style.display = 'block';
+      $('action-btn').style.display = 'none';
+      $('input-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // Fokus mit kurzem Delay für mobile Zuverlässigkeit
+      setTimeout(() => { try { $('inp-sys').focus(); } catch(e){} }, 300);
+    });
+  }
+
+  // Auswerten-Button
+  $('btn-auswerten').addEventListener('click', () => {
+    const sVal = parseInt($('inp-sys').value);
+    const dVal = parseInt($('inp-dia').value);
+    if (isNaN(sVal) || isNaN(dVal)) {
+      $('inp-sys').style.outline = isNaN(sVal) ? '2px solid #dc2626' : '';
+      $('inp-dia').style.outline = isNaN(dVal) ? '2px solid #dc2626' : '';
+      return;
+    }
+    $('inp-sys').style.outline = '';
+    $('inp-dia').style.outline = '';
+    measuredSys = sVal;
+    measuredDia = dVal;
+    $('btn-auswerten').style.display = 'none';
+    showResult();
+    $('action-btn').style.display = 'block';
+    $('action-btn').disabled = false;
+    $('action-btn').textContent = '↻ Neue Messung';
+    // Nach 5 Sek automatisch bereit für neue Messung (Button-Text bleibt, keine Zwangsaktion)
+    $('action-btn').style.animation = 'none';
+    setTimeout(() => {
+      if (phase === 'done') $('action-btn').style.boxShadow = '0 0 0 3px rgba(13,115,119,.25)';
+    }, 5000);
+  });
+
+  // Enter / Go auf Mobile → weiter
+  $('inp-sys').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('inp-dia').focus(); } });
+  $('inp-dia').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('btn-auswerten').click(); } });
+
+  // Aktions-Button
+  $('action-btn').addEventListener('click', () => {
+    if (phase === 'idle' || phase === 'done') startMeasurement();
+  });
+
+  function diffLabel(d) {
+    if (d === 0) return '✓ Genau getroffen!';
+    if (d > 0)  return '+' + d + ' mmHg';
+    return d + ' mmHg';
+  }
+  function diffClass(d, tol) {
+    d = Math.abs(d);
+    if (d === 0) return 'diff-ok';
+    if (d <= tol) return 'diff-ok';
+    if (d <= tol * 2) return 'diff-warn';
+    return 'diff-err';
+  }
+
+  function showResult() {
+    const tol = TOLERANCE;
+    const hasSys = measuredSys !== null;
+    const hasDia = measuredDia !== null;
+
+    const dSys = hasSys ? measuredSys - trueSys : null;
+    const dDia = hasDia ? measuredDia - trueDia : null;
+
+    const sysOk = hasSys && Math.abs(dSys) <= tol;
+    const diaOk = hasDia && Math.abs(dDia) <= tol;
+    const allOk = sysOk && diaOk;
+
+    // Session-Score
+    sessionTotal++;
+    if (allOk) sessionCorrect++;
+
+
+    // Balken-Breite: wie nah war der Schüler? 100% = perfekt, 0% = doppelte Toleranz überschritten
+    function barPct(d) {
+      if (d === null) return 0;
+      return Math.max(0, Math.round((1 - Math.abs(d) / (tol * 2)) * 100));
+    }
+    function barColor(ok) { return ok ? 'green' : 'red'; }
+    function deltaStr(d) {
+      if (d === null) return 'Nicht erfasst';
+      const sign = d > 0 ? '+' : '';
+      return `${sign}${d} mmHg`;
+    }
+
+    const verdictCls  = allOk ? 'ok' : (sysOk || diaOk) ? 'warn' : 'err';
+    const verdictText = allOk ? 'Sehr gut!' : (sysOk || diaOk) ? 'Fast!' : 'Daneben';
+
+    const scoreText = sessionTotal === 1
+      ? (allOk ? '1 von 1 richtig' : '0 von 1 richtig')
+      : `${sessionCorrect} von ${sessionTotal} richtig`;
+
+    const html = `<div class="card res-hero ${verdictCls}" style="width:100%;">
+        <div class="res-col">
+          <span class="res-col-label">Richtig</span>
+          <span class="res-col-val">${trueSys}/${trueDia}</span>
+          <span style="font-size:10px;color:var(--muted);font-weight:500">mmHg</span>
+        </div>
+        <div class="res-divider">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <span class="res-verdict ${verdictCls}">${verdictText}</span>
+          <span style="font-size:10px;color:var(--muted);font-weight:600;margin-top:2px">${scoreText}</span>
+        </div>
+        <div class="res-col">
+          <span class="res-col-label">Gemessen</span>
+          <span class="res-col-val ${verdictCls}">${hasSys ? measuredSys : '–'}/${hasDia ? measuredDia : '–'}</span>
+          <span style="font-size:10px;color:var(--muted);font-weight:500">mmHg</span>
+        </div>
+    </div>`;
+
+    const wrap = $('result-wrap');
+    wrap.innerHTML = html;
+    wrap.style.display = 'block';
+    wrap.classList.remove('res-fadein');
+    requestAnimationFrame(() => wrap.classList.add('res-fadein'));
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+})();
+
+// Service Worker registrieren
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
