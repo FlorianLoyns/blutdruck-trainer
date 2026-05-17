@@ -312,7 +312,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   color: var(--muted);
   padding: 4px 0 14px;
 }
-.footer a { color: var(--muted); text-decoration: none; }
+.footer a { color: var(--muted); text-decoration: none; transition: opacity .15s; }
+.footer a:hover { opacity: .65; }
 
 /* Info-Karte ausblendbar */
 .learn-card {
